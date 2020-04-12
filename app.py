@@ -1,15 +1,38 @@
-import os
-import urllib.request
-
-from flask import Flask, render_template, request
+from flask import Flask, request
+from flask_restful import reqparse, abort, Resource, Api
 
 app = Flask(__name__)
-app.debug = True
+api = Api(app)
 
+accounts = [
+    {"id": 1, "name": "Bank of Saint Denis"},
+    {"id": 2, "name": "Banco do Brasil"}
+]
 
-@app.route('/')
+@app.route("/")
 def index():
-    return render_template("index.html", menuActive="index")
+    return "BlackBeans API"
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+def findAccount(id):
+    for account in accounts:
+        if account["id"] == id:
+            return account
+
+class Account(Resource):
+    def get(self, id):
+        return findAccount(id)
+
+    def put(self, id):
+        account = request.json
+        accounts.append(account)
+        return findAccount(id)
+
+class AccountList(Resource):
+    def get(self):
+        return accounts
+
+api.add_resource(AccountList, "/account")
+api.add_resource(Account, "/account/<int:id>")
+
+if __name__ == "__main__":
+    app.run(debug=False)
