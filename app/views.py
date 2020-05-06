@@ -1,7 +1,12 @@
 from flask import jsonify, request
 from flask_restful import Resource
-from app import api, db
+from app import app, api, db
 from app.model import Account, Category
+
+
+@app.route("/")
+def home():
+    return "BlackBeans 🐶<br><a href='https://github.com/ricardo0100/BlackBeansAPI'>Github page</a>"
 
 
 # Accounts
