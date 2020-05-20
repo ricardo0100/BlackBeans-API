@@ -1,7 +1,7 @@
 from flask import jsonify, request
 from flask_restful import Resource
 from app import app, api, db
-from app.model import Account, Category
+from app.model import Account, Category, Bean
 
 
 @app.route("/")
@@ -83,9 +83,59 @@ class CategoriesResource(Resource):
         return category.serialize()
 
 
+# Bean
+class BeanListResource(Resource):
+    @staticmethod
+    def get():
+        after_timestamp = request.args.get('updated_after')
+        beans = Bean.query.filter(Bean.update >= after_timestamp).all()
+        return jsonify(list(map(lambda bean: bean.serialize(), beans)))
+
+    @staticmethod
+    def post():
+        json = request.json
+        bean = Bean()
+        bean.name = json["name"]
+        bean.update = json["lastSavedTime"]
+        bean.creation = json["createdTime"]
+        bean.effectivation = json["effectivationTime"]
+        bean.value = json["value"]
+        bean.isCredit = json["isCredit"]
+        bean.isActive = True
+        bean.category_id = json.get("categoryID", None)
+        bean.account_id = json["accountID"]
+        db.session.add(bean)
+        db.session.commit()
+        return bean.serialize()
+
+
+class BeanResource(Resource):
+    @staticmethod
+    def get(bean_id):
+        return jsonify(Bean.query.get(bean_id).serialize())
+
+    @staticmethod
+    def put(bean_id):
+        bean = Bean.query.get(bean_id)
+        json = request.json
+        bean.name = json["name"]
+        bean.update = json["lastSavedTime"]
+        bean.effectivation = json["effectivationTime"]
+        bean.value = json["value"]
+        bean.isCredit = json["isCredit"]
+        bean.isActive = json["isActive"]
+        bean.category_id = json.get("categoryID", None)
+        bean.account_id = json["accountID"]
+        db.session.commit()
+        return bean.serialize()
+
+
 # Paths
 api.add_resource(AccountsListResource, "/account")
 api.add_resource(AccountsResource, "/account/<int:account_id>")
 
 api.add_resource(CategoryListResource, "/category")
 api.add_resource(CategoriesResource, "/category/<int:category_id>")
+
+api.add_resource(BeanListResource, "/bean")
+api.add_resource(BeanResource, "/bean/<int:bean_id>")
