@@ -13,12 +13,9 @@ class User(db.Model):
 
     def serialize(self):
         return {
-            "id": self.id,
             "name": self.name,
             "email": self.email,
-            "token": self.token,
-            "createdTime": self.creation,
-            "lastSavedTime": self.update
+            "token": self.token
         }
 
 

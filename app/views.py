@@ -23,7 +23,7 @@ def home():
 # User
 @app.route("/login", methods=['POST'])
 def login():
-    email = request.form['email']
+    email = request.form['email'].lower()
     password = request.form['password']
     h = hashlib.sha256()
     h.update(password.encode('utf-8'))
