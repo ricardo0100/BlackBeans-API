@@ -11,8 +11,8 @@ https://black-beans.herokuapp.com
 ## Model
 
 - [x] Account
-- [ ] Category
-- [ ] Account
+- [x] Category
+- [x] Account
 - [ ] User
 
 ## Features
