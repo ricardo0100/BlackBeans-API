@@ -1,6 +1,27 @@
 from app import db
 
 
+class User(db.Model):
+    __tablename__ = "users"
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(200))
+    creation = db.Column(db.Float)
+    update = db.Column(db.Float)
+    email = db.Column(db.String)
+    token = db.Column(db.String)
+    password = db.Column(db.String)
+
+    def serialize(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "email": self.email,
+            "token": self.token,
+            "createdTime": self.creation,
+            "lastSavedTime": self.update
+        }
+
+
 class Account(db.Model):
     __tablename__ = "accounts"
     id = db.Column(db.Integer, primary_key=True)
@@ -8,6 +29,7 @@ class Account(db.Model):
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
     isActive = db.Column(db.Boolean)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def serialize(self):
         return {
@@ -26,6 +48,7 @@ class Category(db.Model):
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
     isActive = db.Column(db.Boolean)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def serialize(self):
         return {
@@ -49,6 +72,7 @@ class Bean(db.Model):
     effectivation = db.Column(db.Float)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
     def serialize(self):
         return {

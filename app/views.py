@@ -1,23 +1,48 @@
 from flask import jsonify, request
 from flask_restful import Resource
 from app import app, api, db
-from app.model import Account, Category, Bean
+from app.model import Account, Category, Bean, User
+from flask_httpauth import HTTPTokenAuth
+import hashlib
+
+auth = HTTPTokenAuth(scheme='Bearer')
+
+
+@auth.verify_token
+def verify_token(token):
+    print("TOKEN: " + token)
+    return User.query.filter(User.token == token).first()
 
 
 @app.route("/")
+@auth.login_required
 def home():
-    return "BlackBeans 🐶<br/><a href='https://github.com/ricardo0100/BlackBeansAPI'>Github page</a>"
+    return "Welcome " + auth.current_user().name
+
+
+# User
+@app.route("/login", methods=['POST'])
+def login():
+    email = request.form['email']
+    password = request.form['password']
+    h = hashlib.sha256()
+    h.update(password.encode('utf-8'))
+    password_hash = h.hexdigest()
+    user = User.query.filter(User.email == email, User.password == password_hash).first_or_404()
+    return user.serialize()
 
 
 # Account
 class AccountsListResource(Resource):
     @staticmethod
+    @auth.login_required
     def get():
         after_timestamp = request.args.get('updated_after')
         accounts = Account.query.filter(Account.update >= after_timestamp).all()
         return jsonify(list(map(lambda account: account.serialize(), accounts)))
 
     @staticmethod
+    @auth.login_required
     def post():
         json = request.json
         account = Account()
@@ -32,10 +57,12 @@ class AccountsListResource(Resource):
 
 class AccountsResource(Resource):
     @staticmethod
+    @auth.login_required
     def get(account_id):
         return jsonify(Account.query.get(account_id).serialize())
 
     @staticmethod
+    @auth.login_required
     def put(account_id):
         account = Account.query.get(account_id)
         json = request.json
@@ -49,12 +76,14 @@ class AccountsResource(Resource):
 # Category
 class CategoryListResource(Resource):
     @staticmethod
+    @auth.login_required
     def get():
         after_timestamp = request.args.get('updated_after')
         categories = Category.query.filter(Category.update >= after_timestamp).all()
         return jsonify(list(map(lambda category: category.serialize(), categories)))
 
     @staticmethod
+    @auth.login_required
     def post():
         json = request.json
         category = Category()
@@ -69,10 +98,12 @@ class CategoryListResource(Resource):
 
 class CategoriesResource(Resource):
     @staticmethod
+    @auth.login_required
     def get(category_id):
         return jsonify(Category.query.get(category_id).serialize())
 
     @staticmethod
+    @auth.login_required
     def put(category_id):
         category = Category.query.get(category_id)
         json = request.json
@@ -86,12 +117,14 @@ class CategoriesResource(Resource):
 # Bean
 class BeanListResource(Resource):
     @staticmethod
+    @auth.login_required
     def get():
         after_timestamp = request.args.get('updated_after')
         beans = Bean.query.filter(Bean.update >= after_timestamp).all()
         return jsonify(list(map(lambda bean: bean.serialize(), beans)))
 
     @staticmethod
+    @auth.login_required
     def post():
         json = request.json
         bean = Bean()
@@ -111,10 +144,12 @@ class BeanListResource(Resource):
 
 class BeanResource(Resource):
     @staticmethod
+    @auth.login_required
     def get(bean_id):
         return jsonify(Bean.query.get(bean_id).serialize())
 
     @staticmethod
+    @auth.login_required
     def put(bean_id):
         bean = Bean.query.get(bean_id)
         json = request.json
