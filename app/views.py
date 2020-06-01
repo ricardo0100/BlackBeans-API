@@ -4,13 +4,14 @@ from app import app, api, db
 from app.model import Account, Category, Bean, User
 from flask_httpauth import HTTPTokenAuth
 import hashlib
+import time
+import uuid
 
 auth = HTTPTokenAuth(scheme='Bearer')
 
 
 @auth.verify_token
 def verify_token(token):
-    print("TOKEN: " + token)
     return User.query.filter(User.token == token).first()
 
 
@@ -24,12 +25,35 @@ def home():
 @app.route("/login", methods=['POST'])
 def login():
     email = request.form['email'].lower()
-    password = request.form['password']
-    h = hashlib.sha256()
-    h.update(password.encode('utf-8'))
-    password_hash = h.hexdigest()
-    user = User.query.filter(User.email == email, User.password == password_hash).first_or_404()
+    password = sha256_hash(request.form['password'])
+    user = User.query.filter(User.email == email, User.password == password).first_or_404()
     return user.serialize()
+
+
+@app.route("/signup", methods=['POST'])
+def signup():
+    email = request.form['email'].lower()
+    password = sha256_hash(request.form['password'])
+    name = request.form['name']
+    token = str(uuid.uuid4())
+    if User.query.filter(User.email == email).first() is not None:
+        return None
+    user = User()
+    user.name = name
+    user.email = email
+    user.password = password
+    user.token = token
+    user.creation = time.time()
+    user.update = time.time()
+    db.session.add(user)
+    db.session.commit()
+    return user.serialize()
+
+
+def sha256_hash(string):
+    sha256 = hashlib.sha256()
+    sha256.update(string.encode('utf-8'))
+    return sha256.hexdigest()
 
 
 # Account
