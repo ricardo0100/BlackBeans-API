@@ -7,9 +7,9 @@ class User(db.Model):
     name = db.Column(db.String(200))
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
-    email = db.Column(db.String)
-    token = db.Column(db.String)
-    password = db.Column(db.String)
+    email = db.Column(db.String(200))
+    token = db.Column(db.String(200))
+    password = db.Column(db.String(200))
 
     def serialize(self):
         return {
@@ -26,7 +26,7 @@ class Account(db.Model):
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
     isActive = db.Column(db.Boolean)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def serialize(self):
         return {
@@ -45,7 +45,7 @@ class Category(db.Model):
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
     isActive = db.Column(db.Boolean)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def serialize(self):
         return {
@@ -69,7 +69,7 @@ class Bean(db.Model):
     effectivation = db.Column(db.Float)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def serialize(self):
         return {

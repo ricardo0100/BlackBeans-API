@@ -10,3 +10,6 @@ api = Api(app)
 
 from app import model
 from app import views
+
+db.create_all()
+db.session.commit()

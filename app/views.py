@@ -1,5 +1,6 @@
-from flask import jsonify, request
+from flask import jsonify, request, make_response
 from flask_restful import Resource
+from sqlalchemy import null
 from app import app, api, db
 from app.model import Account, Category, Bean, User
 from flask_httpauth import HTTPTokenAuth
@@ -9,16 +10,14 @@ import uuid
 
 auth = HTTPTokenAuth(scheme='Bearer')
 
-
 @auth.verify_token
 def verify_token(token):
     return User.query.filter(User.token == token).first()
 
 
 @app.route("/")
-@auth.login_required
 def home():
-    return "Welcome " + auth.current_user().name
+    return "Welcome to Earth"
 
 
 # User
@@ -59,11 +58,16 @@ def sha256_hash(string):
 # Account
 class AccountsListResource(Resource):
     @staticmethod
-    @auth.login_required
+    # @auth.login_required
     def get():
         after_timestamp = request.args.get('updated_after')
+        if (after_timestamp is None): 
+            after_timestamp = 0
         accounts = Account.query.filter(Account.update >= after_timestamp).all()
-        return jsonify(list(map(lambda account: account.serialize(), accounts)))
+        response_body = jsonify(list(map(lambda account: account.serialize(), accounts)))
+        response = make_response(response_body)
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        return response
 
     @staticmethod
     @auth.login_required
@@ -190,11 +194,11 @@ class BeanResource(Resource):
 
 
 # Paths
-api.add_resource(AccountsListResource, "/account")
+api.add_resource(AccountsListResource, "/accounts")
 api.add_resource(AccountsResource, "/account/<int:account_id>")
 
-api.add_resource(CategoryListResource, "/category")
+api.add_resource(CategoryListResource, "/categories")
 api.add_resource(CategoriesResource, "/category/<int:category_id>")
 
-api.add_resource(BeanListResource, "/bean")
+api.add_resource(BeanListResource, "/beans")
 api.add_resource(BeanResource, "/bean/<int:bean_id>")
