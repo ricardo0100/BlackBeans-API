@@ -4,3 +4,4 @@ flask-restful
 mysqlclient
 Flask-SQLAlchemy
 flask_httpauth
+flask-cors

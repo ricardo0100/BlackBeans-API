@@ -1,9 +1,11 @@
-from flask import jsonify, request, make_response
+from audioop import cross
+from flask import jsonify, request
 from flask_restful import Resource
 from sqlalchemy import null
 from app import app, api, db
 from app.model import Account, Category, Bean, User
 from flask_httpauth import HTTPTokenAuth
+from flask_cors import cross_origin
 import hashlib
 import time
 import uuid
