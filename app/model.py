@@ -23,6 +23,7 @@ class Account(db.Model):
     __tablename__ = "accounts"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
+    color = db.Column(db.String(20))
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
     isActive = db.Column(db.Boolean)
@@ -31,6 +32,7 @@ class Account(db.Model):
     def serialize(self):
         return {
             "id": self.id,
+            "color": self.color,
             "name": self.name,
             "createdTime": self.creation,
             "lastSavedTime": self.update,

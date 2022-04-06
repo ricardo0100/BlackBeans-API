@@ -1,7 +1,5 @@
-from audioop import cross
-from flask import jsonify, request
+from flask import jsonify, make_response, request
 from flask_restful import Resource
-from sqlalchemy import null
 from app import app, api, db
 from app.model import Account, Category, Bean, User
 from flask_httpauth import HTTPTokenAuth
@@ -60,22 +58,28 @@ def sha256_hash(string):
 # Account
 class AccountsListResource(Resource):
     @staticmethod
-    # @auth.login_required
+    @auth.login_required
+    @cross_origin()
     def get():
+        user = auth.current_user()
         after_timestamp = request.args.get('updated_after')
         if (after_timestamp is None): 
             after_timestamp = 0
-        accounts = Account.query.filter(Account.update >= after_timestamp).all()
+        accounts = Account.query.filter(
+            Account.update >= after_timestamp,
+            Account.user_id == user.id).all()
         response_body = jsonify(list(map(lambda account: account.serialize(), accounts)))
         response = make_response(response_body)
-        response.headers["Access-Control-Allow-Origin"] = "*"
         return response
 
     @staticmethod
     @auth.login_required
+    @cross_origin()
     def post():
+        user = auth.current_user()
         json = request.json
         account = Account()
+        account.user_id = user.id
         account.name = json["name"]
         account.update = json["lastSavedTime"]
         account.creation = json["createdTime"]
