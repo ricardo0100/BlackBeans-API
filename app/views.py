@@ -48,6 +48,25 @@ def signup():
     db.session.commit()
     return user.serialize()
 
+@app.route("/available-colors", methods=['GET'])
+@cross_origin()
+def colors():
+    colors = {
+        "colors": [
+            '#0d6efd',
+            '#6610f2',
+            '#6f42c1',
+            '#d63384',
+            '#dc3545',
+            '#fd7e14',
+            '#ffc107',
+            '#198754',
+            '#20c997',
+            '#0dcaf0',
+            '#adb5bd'
+        ]
+    }
+    return colors
 
 def sha256_hash(string):
     sha256 = hashlib.sha256()
@@ -81,6 +100,7 @@ class AccountsListResource(Resource):
         account = Account()
         account.user_id = user.id
         account.name = json["name"]
+        account.color = json["color"]
         account.update = json["lastSavedTime"]
         account.creation = json["createdTime"]
         account.isActive = True
@@ -92,15 +112,18 @@ class AccountsListResource(Resource):
 class AccountsResource(Resource):
     @staticmethod
     @auth.login_required
+    @cross_origin()
     def get(account_id):
         return jsonify(Account.query.get(account_id).serialize())
 
     @staticmethod
     @auth.login_required
+    @cross_origin()
     def put(account_id):
         account = Account.query.get(account_id)
         json = request.json
         account.name = json["name"]
+        account.color = json['color']
         account.update = json["lastSavedTime"]
         account.isActive = json["isActive"]
         db.session.commit()
