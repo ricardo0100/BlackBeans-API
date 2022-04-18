@@ -10,6 +10,7 @@ import uuid
 
 auth = HTTPTokenAuth(scheme='Bearer')
 
+
 @auth.verify_token
 def verify_token(token):
     return User.query.filter(User.token == token).first()
@@ -25,7 +26,8 @@ def home():
 def login():
     email = request.form['email'].lower()
     password = sha256_hash(request.form['password'])
-    user = User.query.filter(User.email == email, User.password == password).first_or_404()
+    user = User.query.filter(
+        User.email == email, User.password == password).first_or_404()
     return user.serialize()
 
 
@@ -48,6 +50,7 @@ def signup():
     db.session.commit()
     return user.serialize()
 
+
 @app.route("/available-colors", methods=['GET'])
 @cross_origin()
 def colors():
@@ -68,6 +71,7 @@ def colors():
     }
     return colors
 
+
 def sha256_hash(string):
     sha256 = hashlib.sha256()
     sha256.update(string.encode('utf-8'))
@@ -82,12 +86,15 @@ class AccountsListResource(Resource):
     def get():
         user = auth.current_user()
         after_timestamp = request.args.get('updated_after')
-        if (after_timestamp is None): 
+        if (after_timestamp is None):
             after_timestamp = 0
         accounts = Account.query.filter(
             Account.update >= after_timestamp,
-            Account.user_id == user.id).all()
-        response_body = jsonify(list(map(lambda account: account.serialize(), accounts)))
+            Account.user_id == user.id,
+            Account.isActive == True
+        ).all()
+        response_body = jsonify(
+            list(map(lambda account: account.serialize(), accounts)))
         response = make_response(response_body)
         return response
 
@@ -136,7 +143,8 @@ class CategoryListResource(Resource):
     @auth.login_required
     def get():
         after_timestamp = request.args.get('updated_after')
-        categories = Category.query.filter(Category.update >= after_timestamp).all()
+        categories = Category.query.filter(
+            Category.update >= after_timestamp).all()
         return jsonify(list(map(lambda category: category.serialize(), categories)))
 
     @staticmethod
