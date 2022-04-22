@@ -1,5 +1,9 @@
+import imp
 from flask import jsonify, make_response, request
 from flask_restful import Resource
+from requests import session
+from sqlalchemy import select, func
+from sqlalchemy.orm import aliased
 from app import app, api, db
 from app.model import Account, Category, Bean, User
 from flask_httpauth import HTTPTokenAuth
@@ -18,7 +22,7 @@ def verify_token(token):
 
 @app.route("/")
 def home():
-    return "Welcome to Earth"
+    return "Welcome to Earth 🌎"
 
 
 # User
@@ -90,11 +94,12 @@ class AccountsListResource(Resource):
             after_timestamp = 0
         accounts = Account.query.filter(
             Account.update >= after_timestamp,
-            Account.user_id == user.id,
-            Account.isActive == True
+            Account.is_active == True,
+            Account.user_id == user.id
         ).all()
         response_body = jsonify(
-            list(map(lambda account: account.serialize(), accounts)))
+            list(map(lambda row: row.serialize(), accounts))
+        )
         response = make_response(response_body)
         return response
 
@@ -110,7 +115,7 @@ class AccountsListResource(Resource):
         account.color = json["color"]
         account.update = json["lastSavedTime"]
         account.creation = json["createdTime"]
-        account.isActive = True
+        account.is_active = True
         db.session.add(account)
         db.session.commit()
         return account.serialize()
@@ -132,7 +137,7 @@ class AccountsResource(Resource):
         account.name = json["name"]
         account.color = json['color']
         account.update = json["lastSavedTime"]
-        account.isActive = json["isActive"]
+        account.is_active = json["isActive"]
         db.session.commit()
         return account.serialize()
 

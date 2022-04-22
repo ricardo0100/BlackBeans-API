@@ -1,4 +1,5 @@
 from app import db
+from sqlalchemy import select, func
 
 
 class User(db.Model):
@@ -26,17 +27,27 @@ class Account(db.Model):
     color = db.Column(db.String(20))
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
-    isActive = db.Column(db.Boolean)
+    is_active = db.Column(db.Boolean)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+
+    def sum(self):
+        query = select(func.sum(Bean.value))\
+            .filter(Bean.account_id == self.id)
+        res = db.session.execute(query).all()
+        res = res[0][0]
+        if (res == None):
+            res = 0
+        return res
 
     def serialize(self):
         return {
             "id": self.id,
             "color": self.color,
             "name": self.name,
-            "createdTime": self.creation,
-            "lastSavedTime": self.update,
-            "isActive": self.isActive
+            "created": self.creation,
+            "updated": self.update,
+            "isActive": self.is_active,
+            "total": self.sum()
         }
 
 
@@ -46,7 +57,7 @@ class Category(db.Model):
     name = db.Column(db.String(200))
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
-    isActive = db.Column(db.Boolean)
+    is_active = db.Column(db.Boolean)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def serialize(self):
@@ -55,7 +66,7 @@ class Category(db.Model):
             "name": self.name,
             "createdTime": self.creation,
             "lastSavedTime": self.update,
-            "isActive": self.isActive
+            "isActive": self.is_active
         }
 
 
@@ -65,9 +76,9 @@ class Bean(db.Model):
     name = db.Column(db.String(200))
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
-    isActive = db.Column(db.Boolean)
+    is_active = db.Column(db.Boolean)
     value = db.Column(db.Float)
-    isCredit = db.Column(db.Boolean)
+    is_credit = db.Column(db.Boolean)
     effectivation = db.Column(db.Float)
     category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
