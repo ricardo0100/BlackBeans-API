@@ -31,13 +31,22 @@ class Account(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def sum(self):
-        query = select(func.sum(Bean.value))\
-            .filter(Bean.account_id == self.id)
-        res = db.session.execute(query).all()
-        res = res[0][0]
-        if (res == None):
-            res = 0
-        return res
+        credits_query = select(func.sum(Bean.value)).filter(
+            Bean.account_id == self.id,
+            Bean.is_credit == True
+        )
+        credits_total = db.session.execute(credits_query).all()[0][0]
+        if (credits_total == None):
+            credits_total = 0
+
+        debits_query = select(func.sum(Bean.value)).filter(
+            Bean.account_id == self.id,
+            Bean.is_credit == False
+        )
+        debits_total = db.session.execute(debits_query).all()[0][0]
+        if (debits_total == None):
+            debits_total = 0
+        return credits_total - debits_total
 
     def serialize(self):
         return {
@@ -80,8 +89,10 @@ class Bean(db.Model):
     value = db.Column(db.Float)
     is_credit = db.Column(db.Boolean)
     effectivation = db.Column(db.Float)
-    category_id = db.Column(db.Integer, db.ForeignKey('categories.id'), nullable=True)
-    account_id = db.Column(db.Integer, db.ForeignKey('accounts.id'), nullable=False)
+    category_id = db.Column(db.Integer, db.ForeignKey(
+        'categories.id'), nullable=True)
+    account_id = db.Column(db.Integer, db.ForeignKey(
+        'accounts.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def serialize(self):
