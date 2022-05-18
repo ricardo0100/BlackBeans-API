@@ -1,4 +1,4 @@
-from app import db
+from application import db
 from sqlalchemy import select, func
 
 
@@ -11,6 +11,24 @@ class User(db.Model):
     email = db.Column(db.String(200))
     token = db.Column(db.String(200))
     password = db.Column(db.String(200))
+
+    @property
+    def is_active(self):
+        return True
+
+    @property
+    def is_authenticated(self):
+        return self.token != ''
+
+    @property
+    def is_anonymous(self):
+        return False
+
+    def get_id(self):
+        try:
+            return str(self.id)
+        except AttributeError:
+            raise NotImplementedError("No `id` attribute - override `get_id`") from None
 
     def serialize(self):
         return {
