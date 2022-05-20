@@ -30,7 +30,7 @@ def login():
         email = request.form['email'].lower()
         password = sha256_hash(request.form['password'])
         user = User.query.filter(
-            User.email == email, User.password == password).first_or_404()
+            User.email == email, User.password == password).first()
         login_user(user)
         return redirect(url_for('frontend_app'))
     else:
@@ -81,9 +81,8 @@ def register():
 def current_user():
     return {'name': 'Ricardo'}
 
-# Colors
 
-
+# Resources
 @app.route("/api/available-colors", methods=['GET'])
 @login_required
 def colors():
@@ -105,6 +104,50 @@ def colors():
     return colors
 
 
+@app.route("/api/available-icons", methods=['GET'])
+@login_required
+def icons():
+    icons = {
+        "icons": [
+            'house',
+            'directions_car',
+            'flight',
+            'fastfood',
+            'restaurant_menu',
+            'pets',
+            'school',
+            'construction',
+            'local_shipping',
+            'local_taxi',
+            'festival',
+            'atm',
+            'computer',
+            'fitness_center',
+            'child_friendly',
+            'beach_access',
+            'savings',
+            'rocket_launch',
+            'anchor',
+            'outdoor_grill',
+            'wallet',
+            'local_bar',
+            'local_post_office',
+            'sailing',
+            'liquor',
+            'church',
+            'attractions',
+            'local_movies',
+            'subway',
+            'kitchen',
+            'free_breakfast',
+            'chair',
+            'bed',
+            'pedal_bike',
+        ]
+    }
+    return icons
+
+
 def sha256_hash(string):
     sha256 = hashlib.sha256()
     sha256.update(string.encode('utf-8'))
@@ -117,11 +160,7 @@ class AccountsListResource(Resource):
     @login_required
     def get():
         user = flask_login.current_user
-        after_timestamp = request.args.get('updated_after')
-        if (after_timestamp is None):
-            after_timestamp = 0
         accounts = Account.query.filter(
-            Account.update >= after_timestamp,
             Account.is_active == True,
             Account.user_id == user.id
         ).all()
@@ -159,7 +198,8 @@ class AccountsResource(Resource):
     @login_required
     def put(account_id):
         user = flask_login.current_user
-        account = Account.query.filter(Account.id == account_id, Account.user_id == user.id).first_or_404()
+        account = Account.query.filter(
+            Account.id == account_id, Account.user_id == user.id).first_or_404()
         json = request.json
         account.name = json["name"]
         account.color = json['color']
@@ -169,14 +209,19 @@ class AccountsResource(Resource):
         return account.serialize()
 
 
-# Category
-# class CategoryListResource(Resource):
-#     @staticmethod
-#     def get():
-#         after_timestamp = request.args.get('updated_after')
-#         categories = Category.query.filter(
-#             Category.update >= after_timestamp).all()
-#         return jsonify(list(map(lambda category: category.serialize(), categories)))
+Category
+
+
+class CategoryListResource(Resource):
+    @staticmethod
+    @login_required
+    def get():
+        user = flask_login.current_user
+        categories = Category.query.filter(
+            Category.is_active == True,
+            Category.user_id == user.id
+        ).all()
+        return jsonify(list(map(lambda category: category.serialize(), categories)))
 
 #     @staticmethod
 #     def post():
@@ -258,7 +303,7 @@ class AccountsResource(Resource):
 api.add_resource(AccountsListResource, "/api/accounts")
 api.add_resource(AccountsResource, "/api/account/<int:account_id>")
 
-# api.add_resource(CategoryListResource, "/api/categories")
+api.add_resource(CategoryListResource, "/api/categories")
 # api.add_resource(CategoriesResource, "/api/category/<int:category_id>")
 
 # api.add_resource(BeanListResource, "/api/beans")
