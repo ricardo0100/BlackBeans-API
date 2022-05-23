@@ -1,12 +1,15 @@
-from flask import jsonify, make_response, redirect, request, render_template, url_for
+from re import I
 import flask_login
-from flask_restful import Resource
-from application import app, api, db
-from application.model import Account, Category, Bean, User
-from flask_login import login_user, logout_user, login_required
 import hashlib
 import time
 import uuid
+from flask import jsonify, make_response, redirect, request, render_template, url_for
+from flask_restful import Resource
+from application import app, api, db
+from application.model import Account, Category, Item, User
+from flask_login import login_user, logout_user, login_required
+from sqlalchemy import select
+from sqlalchemy.orm import aliased
 
 
 def verify_token(token):
@@ -110,6 +113,7 @@ def icons():
     icons = {
         "icons": [
             'house',
+            'shopping_cart',
             'directions_car',
             'flight',
             'fastfood',
@@ -188,11 +192,11 @@ class AccountsListResource(Resource):
 
 
 class AccountsResource(Resource):
-    @staticmethod
-    @login_required
-    def get(account_id):
-        user = flask_login.current_user
-        return jsonify(Account.query.filter(Account.id == account_id, Account.user_id == user.id).first_or_404().serialize())
+    # @staticmethod
+    # @login_required
+    # def get(account_id):
+    #     user = flask_login.current_user
+    #     return jsonify(Account.query.filter(Account.id == account_id, Account.user_id == user.id).first_or_404().serialize())
 
     @staticmethod
     @login_required
@@ -208,10 +212,18 @@ class AccountsResource(Resource):
         db.session.commit()
         return account.serialize()
 
+    @staticmethod
+    @login_required
+    def delete(account_id):
+        user = flask_login.current_user
+        account = Account.query.filter(
+            Account.id == account_id, Account.user_id == user.id).first_or_404()
+        account.is_active = False
+        db.session.commit()
+        return 200
 
-Category
 
-
+# Category
 class CategoryListResource(Resource):
     @staticmethod
     @login_required
@@ -223,80 +235,123 @@ class CategoryListResource(Resource):
         ).all()
         return jsonify(list(map(lambda category: category.serialize(), categories)))
 
-#     @staticmethod
-#     def post():
-#         json = request.json
-#         category = Category()
-#         category.name = json["name"]
-#         category.update = json["lastSavedTime"]
-#         category.creation = json["createdTime"]
-#         category.isActive = True
-#         db.session.add(category)
-#         db.session.commit()
-#         return category.serialize()
+    @staticmethod
+    def post():
+        user = flask_login.current_user
+        json = request.json
+        category = Category()
+        category.user_id = user.id
+        category.name = json["name"]
+        category.color = json["color"]
+        category.icon = json["icon"]
+        category.update = json["lastSavedTime"]
+        category.creation = json["createdTime"]
+        category.is_active = True
+        db.session.add(category)
+        db.session.commit()
+        return category.serialize()
 
 
-# class CategoriesResource(Resource):
-#     @staticmethod
-#     def get(category_id):
-#         return jsonify(Category.query.get(category_id).serialize())
+class CategoriesResource(Resource):
+    #     @staticmethod
+    #     def get(category_id):
+    #         return jsonify(Category.query.get(category_id).serialize())
 
-#     @staticmethod
-#     def put(category_id):
-#         category = Category.query.get(category_id)
-#         json = request.json
-#         category.name = json["name"]
-#         category.update = json["lastSavedTime"]
-#         category.isActive = json["isActive"]
-#         db.session.commit()
-#         return category.serialize()
-
-
-# # Bean
-# class BeanListResource(Resource):
-#     @staticmethod
-#     def get():
-#         after_timestamp = request.args.get('updated_after')
-#         beans = Bean.query.filter(Bean.update >= after_timestamp).all()
-#         return jsonify(list(map(lambda bean: bean.serialize(), beans)))
-
-#     @staticmethod
-#     def post():
-#         json = request.json
-#         bean = Bean()
-#         bean.name = json["name"]
-#         bean.update = json["lastSavedTime"]
-#         bean.creation = json["createdTime"]
-#         bean.effectivation = json["effectivationTime"]
-#         bean.value = json["value"]
-#         bean.isCredit = json["isCredit"]
-#         bean.isActive = True
-#         bean.category_id = json.get("categoryID", None)
-#         bean.account_id = json["accountID"]
-#         db.session.add(bean)
-#         db.session.commit()
-#         return bean.serialize()
+    @staticmethod
+    def put(category_id):
+        user = flask_login.current_user
+        category = Category.query.filter(
+            Category.id == category_id, Category.user_id == user.id).first_or_404()
+        json = request.json
+        category.name = json["name"]
+        category.color = json["color"]
+        category.icon = json["icon"]
+        category.update = json["lastSavedTime"]
+        category.is_active = json["isActive"]
+        db.session.commit()
+        return category.serialize()
 
 
-# class BeanResource(Resource):
+# Item
+class ItemListResource(Resource):
+    @staticmethod
+    def get():
+        user = flask_login.current_user
+        stmt = select(
+            Item,
+            Account,
+            Category
+        )\
+            .join(Account)\
+            .outerjoin(Category)\
+            .filter(Item.user_id == user.id)\
+            .order_by(Item.creation)
+        items = db.session.execute(stmt).all()
+
+        def serialize_row(item):
+            dict =  {
+                "id": item[0].id,
+                "name": item[0].name,
+                "value": item[0].value,
+                "isCredit": item[0].is_credit,
+                "creationTimestamp": item[0].creation,
+                "account": {
+                    "id": item[1].id,
+                    "name": item[1].name,
+                    "color": item[1].color
+                }
+            }
+            if (item[2] != None) :
+                dict["category"] = {
+                    "id": item[2].id,
+                    "name": item[2].name,
+                    "color": item[2].color,
+                    "icon": item[2].icon
+                }
+            
+            return dict
+
+        return jsonify(list(map(lambda item: serialize_row(item), items)))
+
+    @staticmethod
+    def post():
+        user = flask_login.current_user
+        json = request.json
+        item = Item()
+        item.user_id = user.id
+        item.name = json["name"]
+        item.update = json["lastSavedTime"]
+        item.creation = json["createdTime"]
+        item.effectivation = json["effectivationTime"]
+        item.value = json["value"]
+        item.is_credit = json["isCredit"]
+        item.is_active = True
+        item.category_id = json.get("categoryId", None)
+        item.account_id = json["accountId"]
+        db.session.add(item)
+        db.session.commit()
+        return item.serialize()
+
+
+class ItemResource(Resource):
 #     @staticmethod
 #     def get(bean_id):
 #         return jsonify(Bean.query.get(bean_id).serialize())
 
-#     @staticmethod
-#     def put(bean_id):
-#         bean = Bean.query.get(bean_id)
-#         json = request.json
-#         bean.name = json["name"]
-#         bean.update = json["lastSavedTime"]
-#         bean.effectivation = json["effectivationTime"]
-#         bean.value = json["value"]
-#         bean.isCredit = json["isCredit"]
-#         bean.isActive = json["isActive"]
-#         bean.category_id = json.get("categoryID", None)
-#         bean.account_id = json["accountID"]
-#         db.session.commit()
-#         return bean.serialize()
+    @staticmethod
+    def put(item_id):
+        item = Item.query.get(item_id)
+        json = request.json
+        item.name = json["name"]
+        item.update = json["lastSavedTime"]
+        item.effectivation = json["effectivationTime"]
+        item.value = json["value"]
+        item.isCredit = json["isCredit"]
+        item.isActive = json["isActive"]
+        item.category_id = json.get("categoryId", None)
+        item.account_id = json["accountId"]
+        db.session.commit()
+        return item.serialize()
 
 
 # Paths
@@ -304,7 +359,7 @@ api.add_resource(AccountsListResource, "/api/accounts")
 api.add_resource(AccountsResource, "/api/account/<int:account_id>")
 
 api.add_resource(CategoryListResource, "/api/categories")
-# api.add_resource(CategoriesResource, "/api/category/<int:category_id>")
+api.add_resource(CategoriesResource, "/api/category/<int:category_id>")
 
-# api.add_resource(BeanListResource, "/api/beans")
-# api.add_resource(BeanResource, "/api/bean/<int:bean_id>")
+api.add_resource(ItemListResource, "/api/items")
+api.add_resource(ItemResource, "/api/item/<int:item_id>")

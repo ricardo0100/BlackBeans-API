@@ -49,17 +49,17 @@ class Account(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def sum(self):
-        credits_query = select(func.sum(Bean.value)).filter(
-            Bean.account_id == self.id,
-            Bean.is_credit == True
+        credits_query = select(func.sum(Item.value)).filter(
+            Item.account_id == self.id,
+            Item.is_credit == True
         )
         credits_total = db.session.execute(credits_query).all()[0][0]
         if (credits_total == None):
             credits_total = 0
 
-        debits_query = select(func.sum(Bean.value)).filter(
-            Bean.account_id == self.id,
-            Bean.is_credit == False
+        debits_query = select(func.sum(Item.value)).filter(
+            Item.account_id == self.id,
+            Item.is_credit == False
         )
         debits_total = db.session.execute(debits_query).all()[0][0]
         if (debits_total == None):
@@ -82,6 +82,8 @@ class Category(db.Model):
     __tablename__ = "categories"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
+    color = db.Column(db.String(20))
+    icon = db.Column(db.String(50))
     creation = db.Column(db.Float)
     update = db.Column(db.Float)
     is_active = db.Column(db.Boolean)
@@ -91,13 +93,15 @@ class Category(db.Model):
         return {
             "id": self.id,
             "name": self.name,
+            "color": self.color,
+            "icon": self.icon,
             "createdTime": self.creation,
             "lastSavedTime": self.update,
             "isActive": self.is_active
         }
 
 
-class Bean(db.Model):
+class Item(db.Model):
     __tablename__ = "beans"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
@@ -119,9 +123,9 @@ class Bean(db.Model):
             "name": self.name,
             "createdTime": self.creation,
             "lastSavedTime": self.update,
-            "isActive": self.isActive,
+            "isActive": self.is_active,
             "value": self.value,
-            "isCredit": self.isCredit,
+            "isCredit": self.is_credit,
             "effectivationTime": self.effectivation,
             "accountID": self.account_id,
             "categoryID": self.category_id
