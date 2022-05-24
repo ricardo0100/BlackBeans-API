@@ -8,7 +8,7 @@ from flask_restful import Resource
 from application import app, api, db
 from application.model import Account, Category, Item, User
 from flask_login import login_user, logout_user, login_required
-from sqlalchemy import select
+from sqlalchemy import false, select
 from sqlalchemy.orm import aliased
 
 
@@ -192,12 +192,6 @@ class AccountsListResource(Resource):
 
 
 class AccountsResource(Resource):
-    # @staticmethod
-    # @login_required
-    # def get(account_id):
-    #     user = flask_login.current_user
-    #     return jsonify(Account.query.filter(Account.id == account_id, Account.user_id == user.id).first_or_404().serialize())
-
     @staticmethod
     @login_required
     def put(account_id):
@@ -253,10 +247,6 @@ class CategoryListResource(Resource):
 
 
 class CategoriesResource(Resource):
-    #     @staticmethod
-    #     def get(category_id):
-    #         return jsonify(Category.query.get(category_id).serialize())
-
     @staticmethod
     def put(category_id):
         user = flask_login.current_user
@@ -284,12 +274,12 @@ class ItemListResource(Resource):
         )\
             .join(Account)\
             .outerjoin(Category)\
-            .filter(Item.user_id == user.id)\
+            .filter(Item.user_id == user.id, Item.is_active == True)\
             .order_by(Item.creation)
         items = db.session.execute(stmt).all()
 
         def serialize_row(item):
-            dict =  {
+            dict = {
                 "id": item[0].id,
                 "name": item[0].name,
                 "value": item[0].value,
@@ -301,14 +291,14 @@ class ItemListResource(Resource):
                     "color": item[1].color
                 }
             }
-            if (item[2] != None) :
+            if (item[2] != None):
                 dict["category"] = {
                     "id": item[2].id,
                     "name": item[2].name,
                     "color": item[2].color,
                     "icon": item[2].icon
                 }
-            
+
             return dict
 
         return jsonify(list(map(lambda item: serialize_row(item), items)))
@@ -334,13 +324,10 @@ class ItemListResource(Resource):
 
 
 class ItemResource(Resource):
-#     @staticmethod
-#     def get(bean_id):
-#         return jsonify(Bean.query.get(bean_id).serialize())
-
     @staticmethod
     def put(item_id):
-        item = Item.query.get(item_id)
+        user = flask_login.current_user
+        item = Item.query.filter(Item.id == item_id, Item.user_id == user.id).first_or_404()
         json = request.json
         item.name = json["name"]
         item.update = json["lastSavedTime"]
@@ -352,6 +339,14 @@ class ItemResource(Resource):
         item.account_id = json["accountId"]
         db.session.commit()
         return item.serialize()
+    
+    @staticmethod
+    def delete(item_id):
+        user = flask_login.current_user
+        item = Item.query.filter(Item.id == item_id, Item.user_id == user.id).first_or_404()
+        item.is_active = False
+        db.session.commit()
+        return 200
 
 
 # Paths
