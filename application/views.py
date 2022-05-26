@@ -44,6 +44,7 @@ def login():
 def test_login():
     user = User.query.filter(User.id == 1).first_or_404()
     login_user(user)
+    user = flask_login.current_user
     return redirect('http://127.0.0.1:3000')
 
 
@@ -260,6 +261,16 @@ class CategoriesResource(Resource):
         category.is_active = json["isActive"]
         db.session.commit()
         return category.serialize()
+    
+    @staticmethod
+    @login_required
+    def delete(category_id):
+        user = flask_login.current_user
+        account = Category.query.filter(
+            Category.id == category_id, Category.user_id == user.id).first_or_404()
+        account.is_active = False
+        db.session.commit()
+        return 200
 
 
 # Item
@@ -274,7 +285,11 @@ class ItemListResource(Resource):
         )\
             .join(Account)\
             .outerjoin(Category)\
-            .filter(Item.user_id == user.id, Item.is_active == True)\
+            .filter(
+                Item.user_id == user.id,
+                Item.is_active == True,
+                Account.is_active == True
+            )\
             .order_by(Item.creation)
         items = db.session.execute(stmt).all()
 
