@@ -34,18 +34,18 @@
     </header>
     <main class="px-3 mt-5 mb-5">
       <h2 class="text-center mb-3">Register</h2>
-      <form>
+      <form method="post">
         <div class="mb-3">
           <label for="exampleInputName" class="form-label">Name</label>
-          <input type="email" class="form-control" id="exampleInputName">
+          <input name="name" type="text" class="form-control" id="exampleInputName">
         </div>
         <div class="mb-3">
           <label for="exampleInputEmail1" class="form-label">Email address</label>
-          <input class="form-control" id="exampleInputEmail1">
+          <input name="email" type="email" class="form-control" id="exampleInputEmail1">
         </div>
         <div class="mb-3">
           <label for="exampleInputPassword1" class="form-label">Password</label>
-          <input type="password" class="form-control" id="exampleInputPassword1">
+          <input name="password" type="password" class="form-control" id="exampleInputPassword1">
         </div>
         <button type="submit" class="btn btn-primary mb-5">Submit</button>
         <p class="text-center">Already have an account? <a href="/login" class="text-white">Click here</a> to log

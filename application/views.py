@@ -58,12 +58,12 @@ def logout():
 @app.route("/register", methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
+        name = request.form['name']
         email = request.form['email'].lower()
         password = sha256_hash(request.form['password'])
-        name = request.form['name']
         token = str(uuid.uuid4())
         if User.query.filter(User.email == email).first() is not None:
-            return None
+            return "E-mail already in use"
         user = User()
         user.name = name
         user.email = email
@@ -73,7 +73,8 @@ def register():
         user.update = time.time()
         db.session.add(user)
         db.session.commit()
-        return user.serialize()
+        login_user(user)
+        return redirect(url_for('frontend_app'))
     else:
         return render_template('register.html')
 
