@@ -39,6 +39,19 @@ def login():
     else:
         return render_template('login.html')
 
+@app.route("/api/login", methods=['GET', 'POST'])
+def api_login():
+    if request.method == 'POST':
+        email = request.form['email'].lower()
+        password = sha256_hash(request.form['password'])
+        print(email)
+        print(password)
+        user = User.query.filter(
+            User.email == email, User.password == password).first()
+        login_user(user)
+        return user.serialize()
+    else:
+        return 404
 
 @app.route('/api/test')
 def test_login():
@@ -291,7 +304,7 @@ class ItemListResource(Resource):
                 Item.is_active == True,
                 Account.is_active == True
             )\
-            .order_by(Item.creation)
+            .order_by(Item.id)
         items = db.session.execute(stmt).all()
 
         def serialize_row(item):
@@ -300,7 +313,7 @@ class ItemListResource(Resource):
                 "name": item[0].name,
                 "value": item[0].value,
                 "isCredit": item[0].is_credit,
-                "creationTimestamp": item[0].creation,
+                "date": item[0].date,
                 "account": {
                     "id": item[1].id,
                     "name": item[1].name,
@@ -326,9 +339,7 @@ class ItemListResource(Resource):
         item = Item()
         item.user_id = user.id
         item.name = json["name"]
-        item.update = json["lastSavedTime"]
-        item.creation = json["createdTime"]
-        item.effectivation = json["effectivationTime"]
+        item.date = json["date"]
         item.value = json["value"]
         item.is_credit = json["isCredit"]
         item.is_active = True
@@ -346,8 +357,7 @@ class ItemResource(Resource):
         item = Item.query.filter(Item.id == item_id, Item.user_id == user.id).first_or_404()
         json = request.json
         item.name = json["name"]
-        item.update = json["lastSavedTime"]
-        item.effectivation = json["effectivationTime"]
+        item.date = json["date"]
         item.value = json["value"]
         item.isCredit = json["isCredit"]
         item.isActive = json["isActive"]

@@ -102,15 +102,13 @@ class Category(db.Model):
 
 
 class Item(db.Model):
-    __tablename__ = "beans"
+    __tablename__ = "items"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(200))
-    creation = db.Column(db.Float)
-    update = db.Column(db.Float)
     is_active = db.Column(db.Boolean)
     value = db.Column(db.Float)
     is_credit = db.Column(db.Boolean)
-    effectivation = db.Column(db.Float)
+    date = db.Column(db.String(10))
     category_id = db.Column(db.Integer, db.ForeignKey(
         'categories.id'), nullable=True)
     account_id = db.Column(db.Integer, db.ForeignKey(
@@ -121,12 +119,10 @@ class Item(db.Model):
         return {
             "id": self.id,
             "name": self.name,
-            "createdTime": self.creation,
-            "lastSavedTime": self.update,
             "isActive": self.is_active,
             "value": self.value,
             "isCredit": self.is_credit,
-            "effectivationTime": self.effectivation,
+            "date": self.date,
             "accountID": self.account_id,
             "categoryID": self.category_id
         }
