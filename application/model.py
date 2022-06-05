@@ -1,6 +1,6 @@
 from application import db
 from sqlalchemy import select, func
-
+from datetime import datetime
 
 class User(db.Model):
     __tablename__ = "users"
@@ -49,9 +49,11 @@ class Account(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
     def sum(self):
+        today = datetime.today().strftime('%Y-%m-%d')
         credits_query = select(func.sum(Item.value)).filter(
             Item.account_id == self.id,
-            Item.is_credit == True
+            Item.is_credit == True,
+            Item.date <= today
         )
         credits_total = db.session.execute(credits_query).all()[0][0]
         if (credits_total == None):
@@ -59,11 +61,13 @@ class Account(db.Model):
 
         debits_query = select(func.sum(Item.value)).filter(
             Item.account_id == self.id,
-            Item.is_credit == False
+            Item.is_credit == False,
+            Item.date <= today
         )
         debits_total = db.session.execute(debits_query).all()[0][0]
         if (debits_total == None):
             debits_total = 0
+        
         return credits_total - debits_total
 
     def serialize(self):
@@ -89,12 +93,28 @@ class Category(db.Model):
     is_active = db.Column(db.Boolean)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
 
+    def sum(self):
+        first_day = "2022-06-01"
+        today = datetime.today().strftime('%Y-%m-%d')
+        debits_query = select(func.sum(Item.value)).filter(
+            Item.category_id == self.id,
+            Item.is_credit == False,
+            Item.date > first_day,
+            Item.date <= today
+        )
+        debits_total = db.session.execute(debits_query).all()[0][0]
+        if (debits_total == None):
+            debits_total = 0
+        
+        return debits_total
+
     def serialize(self):
         return {
             "id": self.id,
             "name": self.name,
             "color": self.color,
             "icon": self.icon,
+            "total": self.sum(),
             "createdTime": self.creation,
             "lastSavedTime": self.update,
             "isActive": self.is_active

@@ -1,4 +1,3 @@
-from re import I
 import flask_login
 import hashlib
 import time
@@ -39,6 +38,7 @@ def login():
     else:
         return render_template('login.html')
 
+
 @app.route("/api/login", methods=['GET', 'POST'])
 def api_login():
     if request.method == 'POST':
@@ -52,6 +52,7 @@ def api_login():
         return user.serialize()
     else:
         return 404
+
 
 @app.route('/api/test')
 def test_login():
@@ -275,7 +276,7 @@ class CategoriesResource(Resource):
         category.is_active = json["isActive"]
         db.session.commit()
         return category.serialize()
-    
+
     @staticmethod
     @login_required
     def delete(category_id):
@@ -303,7 +304,7 @@ class ItemListResource(Resource):
                 Item.user_id == user.id,
                 Item.is_active == True,
                 Account.is_active == True
-            )\
+        )\
             .order_by(Item.id)
         items = db.session.execute(stmt).all()
 
@@ -354,7 +355,8 @@ class ItemResource(Resource):
     @staticmethod
     def put(item_id):
         user = flask_login.current_user
-        item = Item.query.filter(Item.id == item_id, Item.user_id == user.id).first_or_404()
+        item = Item.query.filter(
+            Item.id == item_id, Item.user_id == user.id).first_or_404()
         json = request.json
         item.name = json["name"]
         item.date = json["date"]
@@ -365,11 +367,12 @@ class ItemResource(Resource):
         item.account_id = json["accountId"]
         db.session.commit()
         return item.serialize()
-    
+
     @staticmethod
     def delete(item_id):
         user = flask_login.current_user
-        item = Item.query.filter(Item.id == item_id, Item.user_id == user.id).first_or_404()
+        item = Item.query.filter(
+            Item.id == item_id, Item.user_id == user.id).first_or_404()
         item.is_active = False
         db.session.commit()
         return 200
@@ -384,3 +387,22 @@ api.add_resource(CategoriesResource, "/api/category/<int:category_id>")
 
 api.add_resource(ItemListResource, "/api/items")
 api.add_resource(ItemResource, "/api/item/<int:item_id>")
+
+
+@app.route("/api/dashboard", methods=['GET'])
+def dashboard():
+    user = flask_login.current_user
+    accounts = Account.query.filter(
+        Account.is_active == True,
+        Account.user_id == user.id
+    ).all()
+
+    categories = Category.query.filter(
+        Account.is_active == True,
+        Account.user_id == user.id
+    ).all()
+
+    return {
+        "accountsBoard": list(map(lambda row: row.serialize(), accounts)),
+        "categoriesChart": list(map(lambda row: row.serialize(), categories))
+    }
