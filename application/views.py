@@ -17,49 +17,25 @@ def verify_token(token):
 
 @app.route("/")
 def home():
-    return render_template('home.html')
-
-
-@app.route("/app")
-@login_required
-def frontend_app():
     return render_template('index.html')
 
 
-@app.route("/login", methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form['email'].lower()
-        password = sha256_hash(request.form['password'])
-        user = User.query.filter(
-            User.email == email, User.password == password).first()
-        login_user(user)
-        return redirect(url_for('frontend_app'))
-    else:
-        return render_template('login.html')
-
-
-@app.route("/api/login", methods=['GET', 'POST'])
+@app.route("/api/login", methods=['POST'])
 def api_login():
-    if request.method == 'POST':
-        email = request.form['email'].lower()
-        password = sha256_hash(request.form['password'])
-        print(email)
-        print(password)
-        user = User.query.filter(
-            User.email == email, User.password == password).first()
-        login_user(user)
-        return user.serialize()
-    else:
-        return 404
-
-
-@app.route('/api/test')
-def test_login():
-    user = User.query.filter(User.id == 1).first_or_404()
+    email = request.json['email'].lower()
+    password = sha256_hash(request.json['password'])
+    user = User.query.filter(
+        User.email == email, User.password == password).first_or_404()
     login_user(user)
-    user = flask_login.current_user
-    return redirect('http://127.0.0.1:3000')
+    return user.serialize()
+
+
+# @app.route('/api/test')
+# def test_login():
+#     user = User.query.filter(User.id == 1).first_or_404()
+#     login_user(user)
+#     user = flask_login.current_user
+#     return redirect('http://127.0.0.1:3000')
 
 
 @app.route('/logout')
